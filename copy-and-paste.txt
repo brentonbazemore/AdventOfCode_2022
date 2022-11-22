@@ -1,0 +1,15 @@
+Executed from the root of the project (adventofcode_2022). Replace X with day:
+
+. ./newDay.sh dX
+
+
+
+Execute from dX/pt1:
+
+. ./nextPart.sh
+
+
+
+Execute from dX/pt2:
+
+. ./finishDay.sh
