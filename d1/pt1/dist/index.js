@@ -27,4 +27,5 @@ const fs = __importStar(require("fs"));
 const inputFile = process.argv[2];
 const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data = rawData.split('\n');
+console.log(data);
 //# sourceMappingURL=index.js.map
