@@ -1,0 +1,17 @@
+{
+  "name": "adventofcode_2022",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "tsc": "tsc",
+    "start": "tsc && node ./dist/index.js input.txt",
+    "test": "tsc && node ./dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    "typescript": "^4.9.3"
+  }
+}
