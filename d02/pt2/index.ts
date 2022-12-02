@@ -4,91 +4,51 @@ const inputFile = process.argv[2];
 const rawData: string = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data: string[] = rawData.split('\n');
 
-// AX = Rock
-// BY = Paper
-// CZ = Scissors
-
 const map: any = {
   'A': 'ROCK',
-  'X': 'ROCK',
+  'X': 'LOSE',
   'B': 'PAPER',
-  'Y': 'PAPER',
+  'Y': 'DRAW',
   'C': 'SCISSORS',
-  'Z': 'SCISSORS',
+  'Z': 'WIN',
 }
 
 let totalScore = 0;
 const win = 6;
 const draw = 3;
 const lose = 0;
+const rock = 1;
+const paper = 2;
+const scissors = 3;
 data.forEach(round => {
   const [them, me] = round.split(' ');
-  if (map[them] === map[me]) {
-    totalScore += draw;
+  if (map[them] === 'ROCK' && map[me] === 'LOSE') {
+    totalScore += lose + scissors;
   }
-
-  if (map[them] === 'ROCK' && map[me] === 'PAPER') {
-    totalScore += win;
+  if (map[them] === 'ROCK' && map[me] === 'DRAW') {
+    totalScore += draw + rock;
   }
-  if (map[them] === 'ROCK' && map[me] === 'SCISSORS') {
-    totalScore += lose;
+  if (map[them] === 'ROCK' && map[me] === 'WIN') {
+    totalScore += win + paper;
   }
-  if (map[them] === 'PAPER' && map[me] === 'SCISSORS') {
-    totalScore += win;
+  if (map[them] === 'PAPER' && map[me] === 'LOSE') {
+    totalScore += lose + rock;
   }
-  if (map[them] === 'PAPER' && map[me] === 'ROCK') {
-    totalScore += lose;
+  if (map[them] === 'PAPER' && map[me] === 'DRAW') {
+    totalScore += draw + paper;
   }
-  if (map[them] === 'SCISSORS' && map[me] === 'ROCK') {
-    totalScore += win;
+  if (map[them] === 'PAPER' && map[me] === 'WIN') {
+    totalScore += win + scissors;
   }
-  if (map[them] === 'SCISSORS' && map[me] === 'PAPER') {
-    totalScore += lose;
+  if (map[them] === 'SCISSORS' && map[me] === 'LOSE') {
+    totalScore += lose + paper;
   }
-
-  if (map[me] === 'ROCK') {
-    totalScore += 1;
+  if (map[them] === 'SCISSORS' && map[me] === 'DRAW') {
+    totalScore += draw + scissors;
   }
-  if (map[me] === 'PAPER') {
-    totalScore += 2;
-  }
-  if (map[me] === 'SCISSORS') {
-    totalScore += 3;
+  if (map[them] === 'SCISSORS' && map[me] === 'WIN') {
+    totalScore += win + rock;
   }
 });
 
 console.log(totalScore);
-
-// let totalScore = 0;
-// data.forEach((round) => {
-//   const [them, me] = round.split(' ');
-//   let tempScore = 0;
-//   if (them.charCodeAt(0) + 23 > me.charCodeAt(0)) {
-//     console.log('lost');
-//     tempScore += 0;
-//   } else if (them.charCodeAt(0) + 23 === me.charCodeAt(0)) {
-//     console.log('draw');
-//     tempScore += 3;
-//   } else if (them.charCodeAt(0) + 23 < me.charCodeAt(0)) {
-//     console.log('win')
-//     tempScore += 6;
-//   } else {
-//     throw new Error();
-//   }
-
-//   if (me === 'X') {
-//     tempScore += 1;
-//   }
-//   if (me === 'Y') {
-//     tempScore += 2;
-//   }
-//   if (me === 'Z') {
-//     tempScore += 3;
-//   }
-  
-//   // tempScore += me.charCodeAt(0) - 23 - 65 + 1;
-//   totalScore += tempScore;
-// });
-
-// console.log(totalScore);
-

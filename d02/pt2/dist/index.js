@@ -27,52 +27,49 @@ const fs = __importStar(require("fs"));
 const inputFile = process.argv[2];
 const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data = rawData.split('\n');
-// AX = Rock
-// BY = Paper
-// CZ = Scissors
 const map = {
     'A': 'ROCK',
-    'X': 'ROCK',
+    'X': 'LOSE',
     'B': 'PAPER',
-    'Y': 'PAPER',
+    'Y': 'DRAW',
     'C': 'SCISSORS',
-    'Z': 'SCISSORS',
+    'Z': 'WIN',
 };
 let totalScore = 0;
 const win = 6;
 const draw = 3;
 const lose = 0;
+const rock = 1;
+const paper = 2;
+const scissors = 3;
 data.forEach(round => {
     const [them, me] = round.split(' ');
-    if (map[them] === map[me]) {
-        totalScore += draw;
+    if (map[them] === 'ROCK' && map[me] === 'LOSE') {
+        totalScore += lose + scissors;
     }
-    if (map[them] === 'ROCK' && map[me] === 'PAPER') {
-        totalScore += win;
+    if (map[them] === 'ROCK' && map[me] === 'DRAW') {
+        totalScore += draw + rock;
     }
-    if (map[them] === 'ROCK' && map[me] === 'SCISSORS') {
-        totalScore += lose;
+    if (map[them] === 'ROCK' && map[me] === 'WIN') {
+        totalScore += win + paper;
     }
-    if (map[them] === 'PAPER' && map[me] === 'SCISSORS') {
-        totalScore += win;
+    if (map[them] === 'PAPER' && map[me] === 'LOSE') {
+        totalScore += lose + rock;
     }
-    if (map[them] === 'PAPER' && map[me] === 'ROCK') {
-        totalScore += lose;
+    if (map[them] === 'PAPER' && map[me] === 'DRAW') {
+        totalScore += draw + paper;
     }
-    if (map[them] === 'SCISSORS' && map[me] === 'ROCK') {
-        totalScore += win;
+    if (map[them] === 'PAPER' && map[me] === 'WIN') {
+        totalScore += win + scissors;
     }
-    if (map[them] === 'SCISSORS' && map[me] === 'PAPER') {
-        totalScore += lose;
+    if (map[them] === 'SCISSORS' && map[me] === 'LOSE') {
+        totalScore += lose + paper;
     }
-    if (map[me] === 'ROCK') {
-        totalScore += 1;
+    if (map[them] === 'SCISSORS' && map[me] === 'DRAW') {
+        totalScore += draw + scissors;
     }
-    if (map[me] === 'PAPER') {
-        totalScore += 2;
-    }
-    if (map[me] === 'SCISSORS') {
-        totalScore += 3;
+    if (map[them] === 'SCISSORS' && map[me] === 'WIN') {
+        totalScore += win + rock;
     }
 });
 console.log(totalScore);
