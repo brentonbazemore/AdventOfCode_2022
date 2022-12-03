@@ -6,7 +6,8 @@
   "scripts": {
     "tsc": "tsc",
     "start": "tsc && node ./dist/index.js input.txt",
-    "test": "tsc && node ./dist/index.js"
+    "test": "tsc && node ./dist/index.js",
+    "lodash": "npm i lodash && npm i --save-dev @types/lodash"
   },
   "author": "",
   "license": "ISC",
