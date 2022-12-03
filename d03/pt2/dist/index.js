@@ -35,13 +35,20 @@ for (let i = 0; i < 26; i++) {
 for (let i = 0; i < 26; i++) {
     letters[String.fromCharCode(65 + i)] = i + 1 + 26;
 }
+// let total = 0;
+// data.forEach((ruckSack) => {
+//   const half = Math.ceil(ruckSack.length / 2);    
+//   const left = ruckSack.slice(0, half).split('');
+//   const right = ruckSack.slice(half, ruckSack.length).split('');
+//   const dupe = _.intersection(left, right)[0];
+//   total += letters[dupe];
+// })
+// console.log(total);
 let total = 0;
-data.forEach((ruckSack) => {
-    const half = Math.ceil(ruckSack.length / 2);
-    const left = ruckSack.slice(0, half).split('');
-    const right = ruckSack.slice(half, ruckSack.length).split('');
-    const dupe = _.intersection(left, right)[0];
+for (let i = 0; i < data.length; i += 3) {
+    const [one, two, three] = data.slice(i, i + 3).map(a => a.split(''));
+    const dupe = _.intersection(one, two, three)[0];
     total += letters[dupe];
-});
+}
 console.log(total);
 //# sourceMappingURL=index.js.map
