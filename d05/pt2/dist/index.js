@@ -49,9 +49,8 @@ const instructions = rawInstructions.map(inst => {
     return { amount, from, to };
 });
 instructions.forEach(inst => {
-    for (let i = 0; i < inst.amount; i++) {
-        stacks[inst.to].push(stacks[inst.from].pop());
-    }
+    const moved = stacks[inst.from].splice(-inst.amount);
+    stacks[inst.to].push(...moved);
 });
 console.log(Object.values(stacks).map(s => s[s.length - 1]).join(''));
 //# sourceMappingURL=index.js.map
