@@ -26,5 +26,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
 const inputFile = process.argv[2];
 const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
-const data = rawData.split('\n');
+const data = rawData;
+console.log(data);
+for (let i = 3; i < data.length; i++) {
+    const chars = new Set(...[data.slice(i - 4, i)]);
+    if (chars.size === 4) {
+        console.log(i, 'scuess', chars);
+        break;
+    }
+}
 //# sourceMappingURL=index.js.map
