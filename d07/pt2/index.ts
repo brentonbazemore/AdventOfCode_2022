@@ -17,7 +17,6 @@ const files: TreeNode = {
 
 let pwd: string[] = [];
 data.forEach((cmd) => {
-  console.log(cmd);
   if (cmd.slice(0, 4) === '$ cd') {
     const dest = cmd.split('$ cd ')[1]
     if (dest === '..') {
@@ -46,13 +45,22 @@ data.forEach((cmd) => {
   }
 });
 
+const currentTotal = files.children!['/'].size;
+const target = 40000000;
+
 const matches = [...JSON.stringify(files).matchAll(/"size":[0-9]+}/g)];
-let total = 0;
+let candidate = { size: 0, newTotal: 0 };
 matches.forEach(m => {
   const size = +m[0].split(':')[1].split('}')[0];
-  if (size <= 100000) {
-    total += size;
+  const newTotal = currentTotal - size;
+  if (newTotal < target) {
+    if (newTotal > candidate.newTotal) {
+      candidate = {
+        newTotal,
+        size,
+      };
+    }
   }
 })
 
-console.log(total);
+console.log(candidate.size);
