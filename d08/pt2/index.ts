@@ -5,66 +5,64 @@ const rawData: string = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data: number[][] = rawData.split('\n').map(r => r.split('').map(Number));
 
 const scanUp = (pos: { x: number, y: number }, tree: number) => {
+  let treesViewable = 0;
   for (let i = pos.y - 1; i >= 0; i--) {
     const scannedTree = data[i][pos.x];
+    treesViewable++;
     if (scannedTree >= tree) {
-      return false;
+      return treesViewable;
     }
   }
   
-  // console.log(pos, 'is visible from top');
-  return true;
+  return treesViewable;
 }
 
 const scanDown = (pos: { x: number, y: number }, tree: number) => {
+  let treesViewable = 0;
   for (let i = pos.y + 1; i < data[0].length; i++) {
     const scannedTree = data[i][pos.x];
+    treesViewable++;
     if (scannedTree >= tree) {
-      // console.log(pos, 'is visible from down');
-      return false;
+      return treesViewable;
     }
   }
 
-  return true;
+  return treesViewable;
 }
 
 const scanRight = (pos: { x: number, y: number }, tree: number) => {
+  let treesViewable = 0;
   for (let i = pos.x + 1; i < data[0].length; i++) {
     const scannedTree = data[pos.y][i];
+    treesViewable++;
     if (scannedTree >= tree) {
-      // console.log(pos, 'is visible from right');
-      return false;
+      return treesViewable;
     }
   }
 
-  return true;
+  return treesViewable;
 }
 
 const scanLeft = (pos: { x: number, y: number }, tree: number) => {
+  let treesViewable = 0;
   for (let i = pos.x - 1; i >= 0; i--) {
     const scannedTree = data[pos.y][i];
+    treesViewable++;
     if (scannedTree >= tree) {
-      // console.log(pos, 'is visible from left');
-      return false;
+      return treesViewable;
     }
   }
 
-  return true;
+  return treesViewable;
 }
 
-let total = 0;
+const views = [];
 for (let y = 1; y < data.length - 1; y++) {
   const row = data[y];
   for (let x = 1; x < row.length - 1; x++) {
     const tree = row[x];
-    if (scanUp({ x, y }, tree) 
-      || scanDown({ x, y }, tree)
-      || scanLeft({ x, y }, tree)
-      || scanRight({ x, y }, tree)) {
-          total++;
-        // console.log({ x, y });
-      }
+    views.push(scanUp({ x, y }, tree) * scanDown({ x, y }, tree) * scanRight({ x, y }, tree) * scanLeft({ x, y }, tree));
   }
 }
 
-console.log(total + (data.length * 2) + (data.length * 2) - 4);
+console.log(Math.max(...views));
