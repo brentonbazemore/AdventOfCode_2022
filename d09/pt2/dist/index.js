@@ -27,12 +27,14 @@ const fs = __importStar(require("fs"));
 const inputFile = process.argv[2];
 const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data = rawData.split('\n');
-let head = { x: 0, y: 0 };
-let tail = { x: 0, y: 0 };
-const checkAdjacency = (a, b) => {
+const knots = [];
+for (let i = 0; i < 10; i++) {
+    knots.push({ x: 0, y: 0 });
+}
+const checkAdjacency = (head, tail) => {
     for (let i = -1; i < 2; i++) {
         for (let j = -1; j < 2; j++) {
-            if (a.x + i === b.x && a.y + j == b.y) {
+            if (head.x + i === tail.x && head.y + j == tail.y) {
                 return true;
             }
         }
@@ -43,7 +45,7 @@ const coords2key = (coords) => {
     return `${coords.x}_${coords.y}`;
 };
 const visited = {};
-const moveTail = () => {
+const moveTail = (head, tail) => {
     if (!checkAdjacency(head, tail)) {
         if (head.x !== tail.x) {
             tail.x += Math.sign(head.x - tail.x);
@@ -51,38 +53,39 @@ const moveTail = () => {
         if (head.y !== tail.y) {
             tail.y += Math.sign(head.y - tail.y);
         }
+        // console.log('movin', knots);
     }
 };
 const move = {
-    U: () => {
+    U: (head) => {
         head.y++;
-        moveTail();
     },
-    D: () => {
+    D: (head) => {
         head.y--;
-        moveTail();
     },
-    R: () => {
+    R: (head) => {
         head.x++;
-        moveTail();
     },
-    L: () => {
+    L: (head) => {
         head.x--;
-        moveTail();
     },
 };
 data.forEach((rawMove) => {
     const [d, a] = rawMove.split(' ');
     const direction = d;
     const amount = +a;
-    console.log({ direction, amount });
+    // console.log({direction, amount});
     for (let i = 0; i < amount; i++) {
-        move[direction]();
-        console.log('movin', { head, tail });
-        visited[coords2key(tail)] = true;
+        move[direction](knots[0]);
+        for (let k = 0; k < knots.length - 1; k++) {
+            const head = knots[k];
+            const tail = knots[k + 1];
+            moveTail(head, tail);
+        }
+        visited[coords2key(knots[9])] = true;
     }
 });
 console.log(Object.values(visited).length);
-console.log('final', { head, tail });
+// console.log('final', knots);
 // console.log(checkAdjacency(head, { x: 0, y: 0 }));
 //# sourceMappingURL=index.js.map
