@@ -27,4 +27,39 @@ const fs = __importStar(require("fs"));
 const inputFile = process.argv[2];
 const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data = rawData.split('\n');
+let register = 1;
+const ops = {
+    'addx': {
+        requiredCycles: 2,
+        op: (val) => {
+            register += val;
+        }
+    },
+    'noop': {
+        requiredCycles: 1,
+        op: (val) => { }
+    }
+};
+const instructions = data.map((row) => {
+    const [rawInst, rawV] = row.split(' ');
+    const inst = rawInst;
+    const value = +rawV;
+    return { inst, value };
+}).reverse();
+let total = 0;
+const max = 220;
+let currentInst = instructions.pop();
+let remainingCycles = ops[currentInst.inst].requiredCycles;
+for (let i = 1; i < max + 1; i++) {
+    if (remainingCycles === 0) {
+        ops[currentInst.inst].op(currentInst.value);
+        currentInst = instructions.pop();
+        remainingCycles = ops[currentInst.inst].requiredCycles;
+    }
+    remainingCycles--;
+    if ([20, 60, 100, 140, 180, 220].includes(i)) {
+        total += (i * register);
+    }
+}
+console.log(total);
 //# sourceMappingURL=index.js.map
