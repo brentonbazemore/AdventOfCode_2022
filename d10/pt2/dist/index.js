@@ -46,20 +46,24 @@ const instructions = data.map((row) => {
     const value = +rawV;
     return { inst, value };
 }).reverse();
-let total = 0;
-const max = 220;
+const rows = ['', '', '', '', '', ''];
+const max = 240;
 let currentInst = instructions.pop();
 let remainingCycles = ops[currentInst.inst].requiredCycles;
-for (let i = 1; i < max + 1; i++) {
+for (let i = 0; i < max; i++) {
+    let currentRow = Math.floor(i / 40);
     if (remainingCycles === 0) {
         ops[currentInst.inst].op(currentInst.value);
         currentInst = instructions.pop();
         remainingCycles = ops[currentInst.inst].requiredCycles;
     }
     remainingCycles--;
-    if ([20, 60, 100, 140, 180, 220].includes(i)) {
-        total += (i * register);
+    if ([register - 1, register, register + 1].includes(i % 40)) {
+        rows[currentRow] += '#';
+    }
+    else {
+        rows[currentRow] += ' ';
     }
 }
-console.log(total);
+console.log(rows);
 //# sourceMappingURL=index.js.map
