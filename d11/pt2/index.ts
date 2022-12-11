@@ -4,13 +4,14 @@ const inputFile = process.argv[2];
 const rawData: string = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data: string[] = rawData.split('\n\n');
 
+const primes: number[] = [];
 class Monkey {
   id: number;
   items: number[] = [];
   inspect: (worryLevel: number) => number;
-  postInspection = (worryLevel: number) => {
+  postInspection = (worryLevel: number, lcd: number) => {
     this.inspectionCount++;
-    return Math.floor(worryLevel / 3);
+    return worryLevel % lcd;
   }
   test: (worryLevel: number) => number;
   inspectionCount: number = 0;
@@ -43,6 +44,7 @@ class Monkey {
     }
 
     const divisor = +lines[3].split('divisible by ')[1];
+    primes.push(divisor);
     const trueDest = +lines[4].split('to monkey ')[1];
     const falseDest = +lines[5].split('to monkey ')[1];
     this.test = (worryLevel: number) => {
@@ -69,7 +71,9 @@ const monkeys = data.map(rawMonkey => {
   return new Monkey(rawMonkey);
 });
 
-const rounds = 20;
+const lcd = primes.reduce((prev, cur) => prev * cur, 1)
+
+const rounds = 10000;
 for (let i = 0; i < rounds; i++) {
   monkeys.forEach((monkey) => {
     while (monkey.items.length > 0) {
@@ -79,7 +83,7 @@ for (let i = 0; i < rounds; i++) {
       }
 
       const inspectedItem = monkey.inspect(item);
-      const postInspectedItem = monkey.postInspection(inspectedItem);
+      const postInspectedItem = monkey.postInspection(inspectedItem, lcd);
       const targetMonkey = monkey.test(postInspectedItem);
       monkeys[targetMonkey].catch(postInspectedItem);
     }
