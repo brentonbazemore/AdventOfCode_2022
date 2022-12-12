@@ -10,14 +10,14 @@ heightMap['S'] = 0;
 heightMap['E'] = 25;
 
 const grid: number[][] = [];
-let start: [number, number];
+let starts: [number, number][] = [];
 let end: [number, number];
 for (let y = 0; y < data.length; y++) {
   const row = [];
   for (let x = 0; x < data[0].length; x++) {
     row.push(heightMap[data[y][x]]);
-    if (data[y][x] === 'S') {
-      start = [x, y];
+    if (data[y][x] === 'S' || data[y][x] === 'a') {
+      starts.push([x, y]);
     }
     if (data[y][x] === 'E') {
       end = [x, y];
@@ -55,11 +55,11 @@ const debug = (visited: string[]) => {
   console.log((rows.forEach(r => console.log(r.join('')))));
 }
 
-if (end! == null || start! == null) {
+if (end! == null || starts! == null) {
   throw new Error('Messed up somewhere');
 }
 
-console.log(start, end);
+console.log(starts, end);
 
 const X = 0;
 const Y = 1;
@@ -144,12 +144,12 @@ const getNeighbors = (curr: [number, number]) => {
 }
 
 const endString = end.join(',');
-const bfs = (target: string) => {
+const bfs = (start: [number, number], target: string) => {
   const queue: { position: [number, number], distance: number }[] = [{ position: start, distance: 0 }]; // 1. Initialize queue with Node and current distance 0
   const seen = new Set<string>(); // 2. Initialize set
 
   while (queue.length > 0) {
-    console.log(debug(Array.from(seen.values())));
+    // console.log(debug(Array.from(seen.values())));
     const { position, distance } = queue.shift()!;
     if (position.join(',') === target) {
       return distance;
@@ -166,4 +166,6 @@ const bfs = (target: string) => {
   return -1; // 9. If you didn't find the answer, return something like -1/null/undefined.
 }
 
-console.log(bfs(endString));
+console.log(Math.min(...starts.map(start => {
+  return bfs(start, endString);
+}).filter(v => v != -1)));
