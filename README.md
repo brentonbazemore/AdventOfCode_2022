@@ -61,3 +61,7 @@ There are some helper scripts to quickly execute redundant tasks that are common
 ### Why did you make this project structure so convoluted?
 
 This structure grew organically over the years and is basically the summation of quick hacks that automate some minor tasks. I wanted a structure that allowed me to quickly go through the parts, but also allow me to run each legacy part in exactly the same way as when I solved it originally. The nested part folders keep me from breaking earlier parts.
+
+# Useful references
+
+- [Applied DFS / BFS](https://adrianmejia.com/how-to-solve-any-graph-2d-arrays-maze-interview-questions-in-javascript-dfs-vs-bfs/)
