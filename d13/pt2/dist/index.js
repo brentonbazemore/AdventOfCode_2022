@@ -26,17 +26,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
 const inputFile = process.argv[2];
 const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
-const data = rawData.split('\n\n');
+const data = rawData.split('\n\n').flatMap(l => l.split('\n')).map(l => JSON.parse(l));
+data.push(JSON.parse('[[2]]'));
+data.push(JSON.parse('[[6]]'));
 const compare = (left, right) => {
-    console.log(JSON.stringify({ left, right }));
     if (right == undefined) {
         throw false;
     }
     if (left == undefined) {
         throw true;
-    }
-    if (left == undefined && right == undefined) {
-        throw true; // TODO: verify
     }
     if (Number.isInteger(left) && Number.isInteger(right)) {
         if (left === right) {
@@ -61,23 +59,18 @@ const compare = (left, right) => {
     }
     return;
 };
-let total = 0;
-data.forEach((pair, index) => {
-    console.log('\n\nIndex', index + 1);
-    const [left, right] = pair.split('\n').map(val => JSON.parse(val));
+data.sort((left, right) => {
     let result;
     try {
         compare(left, right);
         result = true;
-        console.log("MADE IT");
     }
     catch (e) {
         result = e;
     }
-    console.log({ result });
-    if (result) {
-        total += (index + 1);
-    }
+    return result ? -1 : 1;
 });
-console.log(total);
+const two = (data.findIndex(d => JSON.stringify(d) === '[[2]]') + 1);
+const six = (data.findIndex(d => JSON.stringify(d) === '[[6]]') + 1);
+console.log(two * six);
 //# sourceMappingURL=index.js.map

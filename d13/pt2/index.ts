@@ -2,22 +2,18 @@ import * as fs from 'fs';
 
 const inputFile = process.argv[2];
 const rawData: string = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
-const data: string[] = rawData.split('\n\n');
-
 type List = number | List[];
+const data: List[] = rawData.split('\n\n').flatMap(l => l.split('\n')).map(l => JSON.parse(l));
+data.push(JSON.parse('[[2]]'));
+data.push(JSON.parse('[[6]]'));
 
 const compare = (left: List, right: List): void => {
-  console.log(JSON.stringify({ left, right }));
   if (right == undefined) {
     throw false;
   }
 
   if (left == undefined) {
     throw true;
-  }
-
-  if (left == undefined && right == undefined) {
-    throw true; // TODO: verify
   }
 
   if (Number.isInteger(left) && Number.isInteger(right)) {
@@ -51,24 +47,18 @@ const compare = (left: List, right: List): void => {
   return;
 }
 
-let total = 0;
-data.forEach((pair, index) => {
-  console.log('\n\nIndex', index + 1);
-  const [left, right] = pair.split('\n').map(val => JSON.parse(val));
-
+data.sort((left, right) => {
   let result;
   try {
     compare(left, right);
     result = true;
-    console.log("MADE IT");
   } catch (e) {
     result = e;
   }
 
-  console.log({result});
-  if (result) {
-    total += (index + 1);
-  }
+  return result ? -1 : 1;
 })
 
-console.log(total);
+const two = (data.findIndex(d => JSON.stringify(d) === '[[2]]') + 1);
+const six = (data.findIndex(d => JSON.stringify(d) === '[[6]]') + 1)
+console.log(two * six);
