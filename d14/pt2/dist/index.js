@@ -41,13 +41,12 @@ const bounds = {
     minY: Infinity,
     maxY: -Infinity,
 };
-data.forEach((pathString) => {
+const drawLine = (pathString) => {
     const lines = pathString.split(' -> ');
     for (let i = 0; i < lines.length - 1; i++) {
         const point0 = lines[i].split(',').map(Number);
         const point1 = lines[i + 1].split(',').map(Number);
         const [start, end] = [point0, point1].sort((a, b) => a[X] - b[X]).sort((a, b) => a[Y] - b[Y]);
-        console.log({ start, end });
         bounds.minX = Math.min(bounds.minX, start[X]);
         bounds.maxX = Math.max(bounds.maxX, end[X]);
         bounds.minY = Math.min(bounds.minY, start[Y]);
@@ -63,7 +62,13 @@ data.forEach((pathString) => {
             }
         }
     }
+};
+data.forEach((pathString) => {
+    drawLine(pathString);
 });
+const extraX = 1000;
+const floor = `${bounds.minX - extraX},${bounds.maxY + 2} -> ${bounds.maxX + extraX},${bounds.maxY + 2}`;
+drawLine(floor);
 const print = (c, buffer) => {
     for (let y = bounds.minY - buffer; y <= bounds.maxY + buffer; y++) {
         let row = '';
@@ -86,11 +91,10 @@ const tick = (sand) => {
     }
     return { sand: [sand[X], sand[Y]], direction: 'none' };
 };
-let abyssal = false;
+let blocking = false;
 let sandCount = 0;
-while (!abyssal) {
+while (!blocking) {
     sandCount++;
-    let freeFallCount = 0;
     let moving = true;
     let sand = [...sandStart];
     while (moving) {
@@ -98,21 +102,13 @@ while (!abyssal) {
         if (nextSand[Y] === sand[Y]) {
             moving = false;
         }
-        if (direction === 'down') {
-            freeFallCount++;
-        }
-        else {
-            freeFallCount = 0;
-        }
-        if (freeFallCount > 200) {
-            abyssal = true;
+        if (nextSand[Y] <= sandStart[Y]) {
+            blocking = true;
             moving = false;
         }
-        // console.log({ nextSand, moving, freeFallCount, abyssal });
         sand = nextSand;
     }
     cave[`${sand[X]},${sand[Y]}`] = Tile.Sand;
-    // print(cave, 1);
 }
-console.log(sandCount - 1);
+console.log(sandCount);
 //# sourceMappingURL=index.js.map
