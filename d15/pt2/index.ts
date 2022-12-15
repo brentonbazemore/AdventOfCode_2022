@@ -41,84 +41,79 @@ const locations = data.map(line => {
   };
 });
 
-// console.log(locations);
-const coord2Key = ({ x, y }: Coords) => {
-  return `${x},${y}`;
-}
-
-enum Tile {
-  Sensor = 'S',
-  Beacon = 'B',
-  Area = '#',
-  AreaStart = '1',
-  AreaEnd = '2',
-}
-type Cave = { [key: string]: Tile };
-const cave: Cave = {};
+type Range = { start: number, end: number };
+const caveRanges: Range[][] = [];
 const bounds = {
-  minX: Infinity,
-  maxX: -Infinity,
-  minY: Infinity,
-  maxY: -Infinity,
-}
+  minX: testing ? 0 : 0,
+  maxX: testing ? 20 : 4000000,
+  minY: testing ? 0 : 0,
+  maxY: testing ? 20 : 4000000,
+};
 
-const print = (c: Cave, buffer: number) => {
-  for (let y = bounds.minY - buffer; y <= bounds.maxY + buffer; y++) {
-    let row = `${y}`.padStart(3, ' ') + '';
-    for (let x = bounds.minX - buffer; x <= bounds.maxX + buffer; x++) {
-      row += c[`${x},${y}`] ? c[`${x},${y}`] : ' ';
-    }
-    console.log(row);
-  }
+for (let i = 0; i <= 4000000; i++) {
+  caveRanges[i] = [];
 }
 
 const drawArea = ({ sensor, beacon, distance }: Location) => {
-  bounds.minX = Math.min(bounds.minX, sensor.x - distance);
-  bounds.maxX = Math.max(bounds.maxX, sensor.x + distance);
-  bounds.minY = Math.min(bounds.minY, sensor.y - distance);
-  bounds.maxY = Math.max(bounds.maxY, sensor.y + distance);
   for (let y = sensor.y - distance; y <= sensor.y + distance; y++) {
-    if (y !== (testing ? 10 : 2000000)) {
+    if (y < bounds.minY || y > bounds.maxY) {
       continue;
     }
+    
+    const ranges = caveRanges[y];
+
     const extent = Math.abs(y - sensor.y);
-    // const start = sensor.x - (distance - extent);
-    // const end = sensor.x + (distance - extent);
-    // if (start === end) {
-    //   cave[coord2Key({ x: start, y })] = Tile.Area;
-    // } else {
-    //   cave[coord2Key({ x: start, y })] = Tile.AreaStart;
-    //   cave[coord2Key({ x: end, y })] = Tile.AreaEnd;
-    // }
+    const start = sensor.x - (distance - extent);
+    const end = sensor.x + (distance - extent);
 
-    for (let x = sensor.x - (distance - extent); x <= sensor.x + (distance - extent); x++) {
-      if (!cave[coord2Key({ x, y })]) {
-        cave[coord2Key({ x, y })] = Tile.Area;
-      }
-
-      if (sensor.x === x && sensor.y === y) {
-        cave[coord2Key({ x, y })] = Tile.Sensor;
-      }
-
-      if (beacon.x === x && beacon.y === y) {
-        cave[coord2Key({ x, y })] = Tile.Beacon;
-      }
-    }
+    ranges.push({ start, end });
   }
 }
 
-// drawArea(locations[0]);
 locations.forEach((location, i) => {
   console.log(location, i);
   drawArea(location);
 });
 
-const y = testing ? 10 : 2000000;
-let total = 0;
-for (let x = bounds.minX; x < bounds.maxX; x++) {
-  const point = cave[coord2Key({ x, y })];
-  total += (point === Tile.Area || point === Tile.Sensor) ? 1 : 0;
-}
-console.log(total);
+const merge = (ranges: Range[]) => {
+  ranges.sort((a, b) => a.start - b.start);
 
-// print(cave, 0);
+  if (ranges.length < 2) {
+    return ranges;
+  }
+
+  const merged = [];
+  let prev = ranges[0];
+  for (let i = 1; i < ranges.length; i++) {
+    if (prev.end >= ranges[i].start) {
+      prev.end = Math.max(prev.end, ranges[i].end);
+    } else {
+      merged.push(prev)
+      prev = ranges[i];
+    }
+  }
+
+  merged.push(prev);
+
+  if (merged.length === 2) {
+    const [a, b] = merged;
+    if (a.start <= b.end && a.end >= b.start || (a.end === b.start - 1)) {
+      a.end = Math.max(a.end, b.end);
+      merged.pop();
+    }
+  }
+
+  return merged;
+}
+
+const merged = caveRanges.map((y, i) => {
+  return merge(merge(y));
+});
+
+for (let i = 0; i < merged.length; i++) {
+  const m = merged[i];
+  if (m.length === 2) {
+    console.log(((m[0].end + 1) * 4000000) + i);
+    break;
+  }
+}
