@@ -24,6 +24,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
+const _ = __importStar(require("lodash"));
 const inputFile = process.argv[2];
 const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data = rawData.split('\n');
@@ -81,49 +82,54 @@ for (let i = 0; i < valveArray.length; i++) {
         distances[valveA.name][valveB.name] = findShortestDistance(valveA.name, valveB.name) + 1; // +1 is activation cost
     }
 }
+// AA DD JJ BB HH CC EE
 console.log(JSON.stringify(distances, null, 2));
-const makeDecision = (valve, decisions, timeLeft) => {
-    // console.log({valve, decisions })
-    // if (timeLeft >= 25) {
-    //   console.log(decisions);
-    // }
-    // console.log(decisions);
-    if (timeLeft <= 0) {
+throw new Error();
+const AAChildren = Object.keys(distances['AA']);
+const makeDecision = (me, ele, decisions) => {
+    if (me.timeLeft <= 0 && ele.timeLeft <= 0) {
         return 0;
     }
+    // console.log(decisions);
     let totalRate = 0;
-    // const lastDecision = decisions.slice(-2);
-    // const lastLast = decisions.slice(-5, -3);
-    // const [a, b] = lastDecision.split('->')!;
-    // if (a === b) {
-    totalRate += (valve.rate * timeLeft);
-    // }
-    // if (valve.rate > 0) {
-    //   const nextDecision = valve.name;
-    //   if (!decisions.includes(nextDecision)) {
-    //     // possibleDecisions.push({ valve, nextDecision, timeConsumed: 1 });
-    //     return totalRate + makeDecision(valve, decisions + ',' + nextDecision, timeLeft - 1);
-    //   }
-    // }
-    const possibleDecisions = [];
-    // console.log('valve.name', valve.name);
-    const childrenIds = Object.keys(distances[valve.name]);
-    for (let i = 0; i < childrenIds.length; i++) {
-        const childId = childrenIds[i];
-        const nextDecision = childId;
-        if (decisions.includes(nextDecision)) {
-            continue;
-        }
-        if (timeLeft - distances[valve.name][childId] < 0) {
-            continue;
-        }
-        possibleDecisions.push({ valve: valves[childId], nextDecision, timeConsumed: distances[valve.name][childId] });
+    const visited = decisions.split(',');
+    const availableIds = _.difference(AAChildren, visited);
+    if (availableIds.length === 0) {
+        return me.timeLeft * valves[me.id].rate + ele.timeLeft * valves[ele.id].rate;
     }
-    if (possibleDecisions.length > 0) {
-        totalRate += Math.max(...possibleDecisions.map(dec => makeDecision(dec.valve, decisions + ',' + dec.nextDecision, timeLeft - dec.timeConsumed)));
+    const maxOut = [];
+    for (let i = 0; i < availableIds.length; i++) {
+        const nextId = availableIds[i];
+        if (me.timeLeft === ele.timeLeft) {
+            // console.log('=')
+            const meOut = { realized: (valves[me.id].rate * me.timeLeft), children: makeDecision({ id: nextId, timeLeft: me.timeLeft - distances[me.id][nextId] }, ele, decisions + ',' + nextId) };
+            const eleOut = { id: nextId, realized: (valves[ele.id].rate * ele.timeLeft), children: makeDecision(me, { id: nextId, timeLeft: ele.timeLeft - distances[ele.id][nextId] }, decisions + ',' + nextId) };
+            maxOut.push(meOut, eleOut);
+        }
+        else if (me.timeLeft > ele.timeLeft) {
+            // console.log('m')
+            const meOut = { realized: (valves[me.id].rate * me.timeLeft), children: makeDecision({ id: nextId, timeLeft: me.timeLeft - distances[me.id][nextId] }, ele, decisions + ',' + nextId) };
+            maxOut.push(meOut);
+        }
+        else if (ele.timeLeft > me.timeLeft) {
+            // console.log('e');
+            const eleOut = { id: nextId, realized: (valves[ele.id].rate * ele.timeLeft), children: makeDecision(me, { id: nextId, timeLeft: ele.timeLeft - distances[ele.id][nextId] }, decisions + ',' + nextId) };
+            maxOut.push(eleOut);
+        }
+        else {
+            throw new Error();
+        }
     }
-    // known[decisions] = totalRate;
+    if (maxOut.length > 0) {
+        maxOut.sort((a, b) => (b.children + b.realized) - (a.children + a.realized));
+        // console.log(decisions, '+', maxOut[0].id, maxOut[0].realized, maxOut[0].timeLeft);
+        totalRate += maxOut[0].children + maxOut[0].realized;
+    }
+    if (maxOut.length === 0) {
+        throw new Error();
+    }
     return totalRate;
 };
-console.log(makeDecision(valves['AA'], 'AA', 30));
+const r = makeDecision({ id: 'AA', timeLeft: 26 }, { id: 'AA', timeLeft: 26 }, 'AA');
+console.log(r);
 //# sourceMappingURL=index.js.map
