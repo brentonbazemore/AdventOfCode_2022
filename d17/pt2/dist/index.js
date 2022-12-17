@@ -120,57 +120,90 @@ const filledPoints = new Set([
     '5_-1',
     '6_-1',
 ]);
-const print = (shape) => {
-    const rows = [];
-    for (let i = spawnHeight; i >= -1; i--) {
-        let row = [];
-        for (let j = -1; j < 8; j++) {
-            if (shape.getPointMap().includes(`${j}_${i}`)) {
-                row.push('@');
-            }
-            else if (filledPoints.has(`${j}_${i}`)) {
-                row.push('#');
-            }
-            else {
-                row.push('.');
-            }
-        }
-        rows.push(row);
-    }
-    rows.forEach(r => console.log(r.join('')));
-    console.log('\n\n');
-};
+// const print = (shape: Shape, layers: number = spawnHeight + 1) => {
+//   const rows: string[][] = [];
+//   for (let i = spawnHeight; i >= spawnHeight - layers; i--) {
+//     let row = [];
+//     for (let j = -1; j < 8; j++) {
+//       if (shape.getPointMap().includes(`${j}_${i}`)) {
+//         row.push('@');
+//       } else if (filledPoints.has(`${j}_${i}`)) {
+//         row.push('#');
+//       } else {
+//         row.push('.');
+//       }
+//     }
+//     rows.push(row)
+//   }
+//   rows.forEach(r => console.log(r.join('')));
+//   console.log('\n\n');
+// }
 const lockInPoints = (shape) => {
     const points = shape.getPointMap();
     points.forEach(point => filledPoints.add(point));
 };
-let spawnHeight = 3;
-const spawnCount = 2022;
-let jetPointer = 0;
-for (let i = 0; i < spawnCount; i++) {
-    const shape = new Shape(shapes[i % shapes.length], spawnHeight);
-    for (let i = 3; i >= 0; i--) {
-        filledPoints.add(`-1_${spawnHeight - i}`);
-        filledPoints.add(`7_${spawnHeight - i}`);
-    }
-    let didMoveDown = true;
-    while (didMoveDown) {
-        const direction = data[jetPointer % data.length];
-        // console.log(direction);
-        if (direction === '>') {
-            shape.moveRight(filledPoints);
+// const cycleSize = shapes.length * data.length;
+const simulate = (initJetPointer, initSpawn, spawnCount, initSpawnHeight) => {
+    let spawnHeight = initSpawnHeight;
+    let jetPointer = initJetPointer;
+    for (let i = initSpawn; i < initSpawn + spawnCount; i++) {
+        console.log({ i });
+        const shape = new Shape(shapes[i % shapes.length], spawnHeight);
+        for (let j = 3; j >= 0; j--) {
+            filledPoints.add(`-1_${spawnHeight - j}`);
+            filledPoints.add(`7_${spawnHeight - j}`);
         }
-        else {
-            shape.moveLeft(filledPoints);
+        // 1184 4
+        // if (jetPointer % data.length === 1184 && i % shapes.length === 4) {
+        // if (jetPointer % data.length === 5 && i % shapes.length === 0) {
+        //   console.log({ i, spawnHeight });
+        //   // print(shape, 10);
+        // }
+        let didMoveDown = true;
+        while (didMoveDown) {
+            const direction = data[jetPointer % data.length];
+            if (direction === '>') {
+                shape.moveRight(filledPoints);
+            }
+            else {
+                shape.moveLeft(filledPoints);
+            }
+            jetPointer++;
+            didMoveDown = shape.moveDown(filledPoints);
         }
-        // print(shape);
-        jetPointer++;
-        didMoveDown = shape.moveDown(filledPoints);
-        // console.log('V')
-        // print(shape);
+        lockInPoints(shape);
+        spawnHeight = Math.max(spawnHeight, shape.position.y + shape.height + 3);
     }
-    lockInPoints(shape);
-    spawnHeight = Math.max(spawnHeight, shape.position.y + shape.height + 3);
-}
-console.log(spawnHeight - 3);
+    console.log((spawnHeight - 3));
+    return {
+        spawnHeight,
+        jetPointer: jetPointer % data.length,
+        spawnCount: initSpawn + spawnCount,
+    };
+};
+// Test:
+// interval = 35
+// height at interval = 53
+// height before interval = 54 (-3?)
+// spawns before interval = 30
+// spawns after interval = 20
+// height after interval = 24?
+// Real:
+// interval = 1745
+// height at interval = 2783
+// height before interval = 349
+// spawns before interval = 209
+// spawns after interval = 944
+// height after interval = ?
+const spawnInterval = 1745;
+const heightInterval = 2783;
+const preCycle = simulate(0, 0, 209, 3);
+const fullCycleCount = Math.floor((1000000000000 - preCycle.spawnCount) / spawnInterval);
+const spawnsLeft = (1000000000000 - preCycle.spawnCount) % spawnInterval;
+const heightSoFar = preCycle.spawnHeight + (heightInterval * fullCycleCount);
+const spawnsSoFar = preCycle.spawnCount + (spawnInterval * fullCycleCount);
+console.log(preCycle.jetPointer, { spawnsSoFar, spawnsLeft, heightSoFar });
+const postCycle = simulate(preCycle.jetPointer, preCycle.spawnCount, spawnsLeft, preCycle.spawnHeight);
+console.log(postCycle);
+console.log((heightSoFar + (postCycle.spawnHeight - preCycle.spawnHeight)) - 3);
 //# sourceMappingURL=index.js.map
