@@ -30,94 +30,67 @@ class Blueprint {
   }
 }
 
-interface Factory {
-  ore: number;
-  clay: number;
-  obsidian: number;
-  geode: number;
-  oreRobots: number;
-  clayRobots: number;
-  obsidianRobots: number;
-  geodeRobots: number;
-}
-
-const getPossibleDecisions = (blueprint: Blueprint, factory: Factory) => {
+const getPossibleDecisions = (blueprint: Blueprint, ore: number, clay: number, obsidian: number, geode: number, oreRobots: number, clayRobots: number, obsidianRobots: number, geodeRobots: number, timeLeft: number) => {
   const decisions: ('ore' | 'clay' | 'obsidian' | 'geode' | 'nothing')[] = [];
-  if (factory.ore >= blueprint.geode[0].amount && factory.obsidian >= blueprint.geode[1].amount) {
+  if (ore >= blueprint.geode[0].amount && obsidian >= blueprint.geode[1].amount) {
     decisions.push('geode');
     return decisions;
   }
-  if (factory.oreRobots < blueprint.maxOre && (factory.ore >= blueprint.ore[0].amount)) {
+  if (oreRobots < blueprint.maxOre && (ore >= blueprint.ore[0].amount) && (ore < blueprint.maxOre * timeLeft)) {
     decisions.push('ore');
   }
-  if (factory.clayRobots < blueprint.maxClay && (factory.ore >= blueprint.clay[0].amount)) {
+  if (clayRobots < blueprint.maxClay && (ore >= blueprint.clay[0].amount) && (clay < blueprint.maxClay * timeLeft)) {
     decisions.push('clay');
   }
-  if (factory.obsidianRobots < blueprint.maxObsidian && (factory.ore >= blueprint.obsidian[0].amount && factory.clay >= blueprint.obsidian[1].amount)) {
+  if (obsidianRobots < blueprint.maxObsidian && (ore >= blueprint.obsidian[0].amount && clay >= blueprint.obsidian[1].amount) && (obsidian < blueprint.maxObsidian * timeLeft)) {
     decisions.push('obsidian');
   }
-  
+
   decisions.push('nothing');
 
   return decisions;
 }
-  
-const mine = (factory: Factory): Factory => {
-  return {
-    ore: factory.ore + factory.oreRobots,
-    clay: factory.clay + factory.clayRobots,
-    obsidian: factory.obsidian + factory.obsidianRobots,
-    geode: factory.geode + factory.geodeRobots,
-    oreRobots: factory.oreRobots,
-    clayRobots: factory.clayRobots,
-    obsidianRobots: factory.obsidianRobots,
-    geodeRobots: factory.geodeRobots,
-  };
-}
 
-const addRobotType = {
-  'ore': (factory: Factory) => factory.oreRobots++,
-  'clay': (factory: Factory) => factory.clayRobots++,
-  'obsidian': (factory: Factory) => factory.obsidianRobots++,
-  'geode': (factory: Factory) => factory.geodeRobots++,
-}
-const spawn = (blueprint: Blueprint, factory: Factory, type: 'ore' | 'clay' | 'obsidian' | 'geode') => {
-  addRobotType[type](factory);
-  for (let i = 0; i < blueprint[type].length; i++) {
-    factory[blueprint[type][i].type] -= blueprint[type][i].amount;
-  }
-}
-
-const simulate = (blueprint: Blueprint, factory: Factory, timeLeft: number): number => {
+const simulate = (blueprint: Blueprint, ore: number, clay: number, obsidian: number, geode: number, oreRobots: number, clayRobots: number, obsidianRobots: number, geodeRobots: number, timeLeft: number, highest: {[time: number]: number}): number => {
   if (timeLeft <= 0) {
-    return factory.geode;
+    return geode;
   }
 
-  if (timeLeft <= 1 && factory.geodeRobots === 0) {
+  if (timeLeft <= 1 && geodeRobots === 0) {
     return 0;
   }
 
-  if (timeLeft <= 2 && factory.obsidianRobots === 0) {
+  if (timeLeft <= 2 && obsidianRobots === 0) {
     return 0;
   }
 
-  if (timeLeft <= 3 && factory.clayRobots === 0) {
+  if (timeLeft <= 3 && clayRobots === 0) {
     return 0;
   }
 
-  const decisions = getPossibleDecisions(blueprint, factory);
+  const potentialMax = geode + (geodeRobots * timeLeft) + ((timeLeft * (timeLeft - 1)) / 2);
+  if (highest[timeLeft] > potentialMax) {
+    return 0;
+  }
+
+  const decisions = getPossibleDecisions(blueprint, ore, clay, obsidian, geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, timeLeft);
 
   const outcomes = decisions.map(decision => {
-    const newFactory = mine(factory);
-
-    if (decision !== 'nothing') {
-      spawn(blueprint, newFactory, decision);
+    if (decision === 'ore') {
+      return simulate(blueprint, oreRobots + (ore - blueprint.ore[0].amount), clayRobots + clay, obsidianRobots + obsidian, geodeRobots + geode, oreRobots + 1, clayRobots, obsidianRobots, geodeRobots, timeLeft - 1, highest);
+    } else if (decision === 'clay') {
+      return simulate(blueprint, oreRobots + (ore - blueprint.clay[0].amount), clayRobots + clay, obsidianRobots + obsidian, geodeRobots + geode, oreRobots, clayRobots + 1, obsidianRobots, geodeRobots, timeLeft - 1, highest);
+    } else if (decision === 'obsidian') {
+      return simulate(blueprint, oreRobots + (ore - blueprint.obsidian[0].amount), clayRobots + (clay - blueprint.obsidian[1].amount), obsidianRobots + obsidian, geodeRobots + geode, oreRobots, clayRobots, obsidianRobots + 1, geodeRobots, timeLeft - 1, highest);
+    } else if (decision === 'geode') {
+      return simulate(blueprint, oreRobots + (ore - blueprint.geode[0].amount), clayRobots + clay, obsidianRobots + (obsidian - blueprint.geode[1].amount), geodeRobots + geode, oreRobots, clayRobots, obsidianRobots, geodeRobots + 1, timeLeft - 1, highest);
+    } else {
+      return simulate(blueprint, oreRobots + ore, clayRobots + clay, obsidianRobots + obsidian, geodeRobots + geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, timeLeft - 1, highest);
     }
-    
-    return simulate(blueprint, newFactory, timeLeft - 1);
-  })
+  });
 
   const max = Math.max(...outcomes);
+  highest[timeLeft] = Math.max(max, (highest[timeLeft] || 0));
   return max;
 }
 
@@ -125,14 +98,13 @@ if (isMainThread) {
   const inputFile = process.argv[2];
   const rawData: string = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
   const data: string[] = rawData.split('\n');
-  const blueprints = data.map(d => new Blueprint(d));
-  // const threadCount = blueprints.length;
+  const blueprints = data.map(d => new Blueprint(d)).slice(0, 3);
   const threads = new Set<Worker>();
   blueprints.forEach(blueprint => {
     threads.add(new Worker(__filename, { workerData: { blueprint }}));
   });
 
-  let sum = 0;
+  let sum = 1;
   for (let worker of threads) {
     worker.on('error', (e) => { throw e; });
     worker.on('exit', () => {
@@ -142,14 +114,20 @@ if (isMainThread) {
         console.log(sum)
       }
     });
-    worker.on('message', (msg: number) => {
-      sum += msg;
+    worker.on('message', (msg: { out: number }) => {
+      if (msg.out) {
+        sum *= msg.out;
+      } else {
+        console.log(msg);
+      }
     });
   }
 } else {
-  const time = 24;
+  const time = 32;
   console.log('Simulating', workerData.blueprint.id)
-  const out = simulate(workerData.blueprint, { ore: 0, clay: 0, obsidian: 0, geode: 0, oreRobots: 1, clayRobots: 0, obsidianRobots: 0, geodeRobots: 0 }, time);
-  parentPort?.postMessage(out * workerData.blueprint.id);
+  const highest: {[time: number]: number} = { 10: 1, 9: 1, 8: 1, 7: 1, 6: 1, 5: 1, 4: 1, 3: 1, 2: 1, 1: 1 };
+  const out = simulate(workerData.blueprint, 0, 0, 0, 0, 1, 0, 0, 0, time, highest);
+  console.log('Finished:', workerData.blueprint.id, 'Out:', out);
+  parentPort?.postMessage({ out: out });
 }
 

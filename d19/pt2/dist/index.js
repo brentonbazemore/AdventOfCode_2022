@@ -46,83 +46,74 @@ class Blueprint {
         this.maxObsidian = Math.max(this.geode[1].amount);
     }
 }
-const getPossibleDecisions = (blueprint, factory) => {
+const getPossibleDecisions = (blueprint, ore, clay, obsidian, geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, timeLeft) => {
     const decisions = [];
-    if (factory.ore >= blueprint.geode[0].amount && factory.obsidian >= blueprint.geode[1].amount) {
+    if (ore >= blueprint.geode[0].amount && obsidian >= blueprint.geode[1].amount) {
         decisions.push('geode');
         return decisions;
     }
-    if (factory.oreRobots < blueprint.maxOre && (factory.ore >= blueprint.ore[0].amount)) {
+    if (oreRobots < blueprint.maxOre && (ore >= blueprint.ore[0].amount) && (ore < blueprint.maxOre * timeLeft)) {
         decisions.push('ore');
     }
-    if (factory.clayRobots < blueprint.maxClay && (factory.ore >= blueprint.clay[0].amount)) {
+    if (clayRobots < blueprint.maxClay && (ore >= blueprint.clay[0].amount) && (clay < blueprint.maxClay * timeLeft)) {
         decisions.push('clay');
     }
-    if (factory.obsidianRobots < blueprint.maxObsidian && (factory.ore >= blueprint.obsidian[0].amount && factory.clay >= blueprint.obsidian[1].amount)) {
+    if (obsidianRobots < blueprint.maxObsidian && (ore >= blueprint.obsidian[0].amount && clay >= blueprint.obsidian[1].amount) && (obsidian < blueprint.maxObsidian * timeLeft)) {
         decisions.push('obsidian');
     }
     decisions.push('nothing');
     return decisions;
 };
-const mine = (factory) => {
-    return {
-        ore: factory.ore + factory.oreRobots,
-        clay: factory.clay + factory.clayRobots,
-        obsidian: factory.obsidian + factory.obsidianRobots,
-        geode: factory.geode + factory.geodeRobots,
-        oreRobots: factory.oreRobots,
-        clayRobots: factory.clayRobots,
-        obsidianRobots: factory.obsidianRobots,
-        geodeRobots: factory.geodeRobots,
-    };
-};
-const addRobotType = {
-    'ore': (factory) => factory.oreRobots++,
-    'clay': (factory) => factory.clayRobots++,
-    'obsidian': (factory) => factory.obsidianRobots++,
-    'geode': (factory) => factory.geodeRobots++,
-};
-const spawn = (blueprint, factory, type) => {
-    addRobotType[type](factory);
-    for (let i = 0; i < blueprint[type].length; i++) {
-        factory[blueprint[type][i].type] -= blueprint[type][i].amount;
-    }
-};
-const simulate = (blueprint, factory, timeLeft) => {
+const simulate = (blueprint, ore, clay, obsidian, geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, timeLeft, highest) => {
     if (timeLeft <= 0) {
-        return factory.geode;
+        return geode;
     }
-    if (timeLeft <= 1 && factory.geodeRobots === 0) {
+    if (timeLeft <= 1 && geodeRobots === 0) {
         return 0;
     }
-    if (timeLeft <= 2 && factory.obsidianRobots === 0) {
+    if (timeLeft <= 2 && obsidianRobots === 0) {
         return 0;
     }
-    if (timeLeft <= 3 && factory.clayRobots === 0) {
+    if (timeLeft <= 3 && clayRobots === 0) {
         return 0;
     }
-    const decisions = getPossibleDecisions(blueprint, factory);
+    const potentialMax = geode + (geodeRobots * timeLeft) + ((timeLeft * (timeLeft - 1)) / 2);
+    // parentPort?.postMessage({geode, geodeRobots, timeLeft, potentialMax});
+    if (highest[timeLeft] > potentialMax) {
+        return 0;
+    }
+    const decisions = getPossibleDecisions(blueprint, ore, clay, obsidian, geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, timeLeft);
     const outcomes = decisions.map(decision => {
-        const newFactory = mine(factory);
-        if (decision !== 'nothing') {
-            spawn(blueprint, newFactory, decision);
+        if (decision === 'ore') {
+            return simulate(blueprint, oreRobots + (ore - blueprint.ore[0].amount), clayRobots + clay, obsidianRobots + obsidian, geodeRobots + geode, oreRobots + 1, clayRobots, obsidianRobots, geodeRobots, timeLeft - 1, highest);
         }
-        return simulate(blueprint, newFactory, timeLeft - 1);
+        else if (decision === 'clay') {
+            return simulate(blueprint, oreRobots + (ore - blueprint.clay[0].amount), clayRobots + clay, obsidianRobots + obsidian, geodeRobots + geode, oreRobots, clayRobots + 1, obsidianRobots, geodeRobots, timeLeft - 1, highest);
+        }
+        else if (decision === 'obsidian') {
+            return simulate(blueprint, oreRobots + (ore - blueprint.obsidian[0].amount), clayRobots + (clay - blueprint.obsidian[1].amount), obsidianRobots + obsidian, geodeRobots + geode, oreRobots, clayRobots, obsidianRobots + 1, geodeRobots, timeLeft - 1, highest);
+        }
+        else if (decision === 'geode') {
+            return simulate(blueprint, oreRobots + (ore - blueprint.geode[0].amount), clayRobots + clay, obsidianRobots + (obsidian - blueprint.geode[1].amount), geodeRobots + geode, oreRobots, clayRobots, obsidianRobots, geodeRobots + 1, timeLeft - 1, highest);
+        }
+        else {
+            return simulate(blueprint, oreRobots + ore, clayRobots + clay, obsidianRobots + obsidian, geodeRobots + geode, oreRobots, clayRobots, obsidianRobots, geodeRobots, timeLeft - 1, highest);
+        }
     });
     const max = Math.max(...outcomes);
+    highest[timeLeft] = Math.max(max, (highest[timeLeft] || 0));
     return max;
 };
 if (worker_threads_1.isMainThread) {
     const inputFile = process.argv[2];
     const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
     const data = rawData.split('\n');
-    const blueprints = data.map(d => new Blueprint(d));
-    // const threadCount = blueprints.length;
+    const blueprints = data.map(d => new Blueprint(d)).slice(0, 3);
     const threads = new Set();
     blueprints.forEach(blueprint => {
         threads.add(new worker_threads_1.Worker(__filename, { workerData: { blueprint } }));
     });
-    let sum = 0;
+    let sum = 1;
     for (let worker of threads) {
         worker.on('error', (e) => { throw e; });
         worker.on('exit', () => {
@@ -133,14 +124,21 @@ if (worker_threads_1.isMainThread) {
             }
         });
         worker.on('message', (msg) => {
-            sum += msg;
+            if (msg.out) {
+                sum *= msg.out;
+            }
+            else {
+                console.log(msg);
+            }
         });
     }
 }
 else {
-    const time = 24;
+    const time = 32;
     console.log('Simulating', worker_threads_1.workerData.blueprint.id);
-    const out = simulate(worker_threads_1.workerData.blueprint, { ore: 0, clay: 0, obsidian: 0, geode: 0, oreRobots: 1, clayRobots: 0, obsidianRobots: 0, geodeRobots: 0 }, time);
-    worker_threads_1.parentPort?.postMessage(out * worker_threads_1.workerData.blueprint.id);
+    const highest = { 10: 1, 9: 1, 8: 1, 7: 1, 6: 1, 5: 1, 4: 1, 3: 1, 2: 1, 1: 1 };
+    const out = simulate(worker_threads_1.workerData.blueprint, 0, 0, 0, 0, 1, 0, 0, 0, time, highest);
+    console.log('Finished:', worker_threads_1.workerData.blueprint.id, 'Out:', out);
+    worker_threads_1.parentPort?.postMessage({ out: out });
 }
 //# sourceMappingURL=index.js.map
