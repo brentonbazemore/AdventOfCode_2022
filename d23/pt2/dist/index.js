@@ -62,8 +62,8 @@ const print = () => {
         console.log(row);
     }
 };
-console.log(bounds);
-print();
+// console.log(bounds);
+// print();
 const getAvailability = (x, y) => {
     // a position is elf'd if false
     return {
@@ -111,9 +111,10 @@ const directionOrder = [
         };
     },
 ];
-const directions = ['north', 'south', 'west', 'east'];
-const totalRounds = 10;
-for (let i = 0; i < totalRounds; i++) {
+let roundCount = 1;
+while (true) {
+    let didMove = false;
+    roundCount++;
     const proposals = {};
     Object.keys(field).forEach(elf => {
         const [x, y] = elf.split(',').map(Number);
@@ -124,7 +125,7 @@ for (let i = 0; i < totalRounds; i++) {
         }
         let proposed;
         for (let j = 0; j < directionOrder.length; j++) {
-            const nthDirection = (j + i) % directionOrder.length;
+            const nthDirection = (j + roundCount) % directionOrder.length;
             const d = directionOrder[nthDirection](x, y);
             if (d.isValid) {
                 proposed = d.next;
@@ -147,37 +148,15 @@ for (let i = 0; i < totalRounds; i++) {
             const currentCoord = proposals[proposedCoord][0];
             delete field[currentCoord];
             field[proposedCoord] = Tile.Elf;
+            didMove = true;
         }
         else {
             // do nothing?
         }
     });
-    console.log('End Round', i);
-    // print();
+    if (!didMove) {
+        console.log(roundCount);
+        break;
+    }
 }
-const getBounds = () => {
-    const bounds = {
-        minX: Infinity,
-        maxX: -Infinity,
-        minY: Infinity,
-        maxY: -Infinity,
-    };
-    Object.keys(field).forEach(coord => {
-        const [x, y] = coord.split(',').map(Number);
-        bounds.minX = Math.min(bounds.minX, x);
-        bounds.maxX = Math.max(bounds.maxX, x);
-        bounds.minY = Math.min(bounds.minY, y);
-        bounds.maxY = Math.max(bounds.maxY, y);
-    });
-    return bounds;
-};
-const { maxX, minX, maxY, minY } = getBounds();
-// for (let y = finalBounds.minY; y < finalBounds.maxY; y++) {
-//   for (let x = finalBounds.minX; x < finalBounds.maxX; x++) {
-//     if ()
-//   }
-// }
-const width = (maxX - minX) + 1;
-const height = (maxY - minY) + 1;
-console.log((width * height) - Object.keys(field).length);
 //# sourceMappingURL=index.js.map
