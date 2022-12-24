@@ -12,7 +12,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/lcm": "^0.0.0",
     "@types/node": "^18.11.9",
     "typescript": "^4.9.3"
+  },
+  "dependencies": {
+    "lcm": "^0.0.3"
   }
 }

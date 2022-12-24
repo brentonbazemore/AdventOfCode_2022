@@ -22,166 +22,79 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
+const lcm_1 = __importDefault(require("lcm"));
 const inputFile = process.argv[2];
 const rawData = fs.readFileSync(inputFile || 'inputTest.txt', 'utf8');
 const data = rawData.split('\n');
-let locations = {};
+const blizzards = {};
 const bounds = {
-    minX: 1,
-    maxX: data[0].length - 2,
-    minY: 1,
-    maxY: data.length - 2,
+    minX: 0,
+    maxX: data[0].length - 1,
+    minY: 0,
+    maxY: data.length - 1,
 };
-const START = '1,0';
-const END = `${data[0].length - 2},${data.length - 1}`;
-const getFreshLocations = () => {
-    const fresh = {};
-    fresh[START] = [];
-    for (let i = 1; i < data.length - 1; i++) {
-        for (let j = 1; j < data[0].length - 1; j++) {
-            fresh[`${j},${i}`] = [];
-        }
-    }
-    fresh[END] = [];
-    return fresh;
-};
-locations = getFreshLocations();
-for (let i = 1; i < data.length - 1; i++) {
-    for (let j = 1; j < data[0].length - 1; j++) {
+const cycleWidth = (bounds.maxX - bounds.minX) + 1;
+const cycleHeight = (bounds.maxY - bounds.minY) + 1;
+const cycle = (0, lcm_1.default)(cycleWidth, cycleHeight);
+const START = '0,-1';
+const END = `${bounds.maxX},${bounds.maxY + 1}`;
+for (let i = 0; i < data.length; i++) {
+    for (let j = 0; j < data[0].length; j++) {
         if (['^', 'v', '<', '>'].includes(data[i][j])) {
-            locations[`${j},${i}`].push(data[i][j]);
+            blizzards[`${j},${i}`] = data[i][j];
         }
     }
 }
-const print = (loc) => {
-    for (let y = 0; y < data.length; y++) {
-        let row = '';
-        for (let x = 0; x < data[0].length; x++) {
-            if (loc[`${x},${y}`] == null) {
-                row += '#';
-            }
-            else if (loc[`${x},${y}`].length === 0) {
-                row += '.';
-            }
-            else if (loc[`${x},${y}`].length === 1) {
-                row += loc[`${x},${y}`];
-            }
-            else if (loc[`${x},${y}`].length > 1) {
-                row += loc[`${x},${y}`].length;
-            }
-        }
-        console.log(row);
-    }
+const mod = (n, m) => {
+    return ((n % m) + m) % m;
 };
-const tick = (prevLocations) => {
-    const newLocations = getFreshLocations();
-    Object.keys(prevLocations).forEach(location => {
-        const blizzards = prevLocations[location];
-        if (blizzards.length === 0) {
-            return;
-        }
-        const [x, y] = location.split(',').map(Number);
-        blizzards.forEach((blizzard) => {
-            let newX = x;
-            let newY = y;
-            if (blizzard === '^') {
-                newY--;
-                if (newY < bounds.minY) {
-                    newY = bounds.maxY;
-                }
-            }
-            else if (blizzard === 'v') {
-                newY++;
-                if (newY > bounds.maxY) {
-                    newY = bounds.minY;
-                }
-            }
-            else if (blizzard === '<') {
-                newX--;
-                if (newX < bounds.minX) {
-                    newX = bounds.maxX;
-                }
-            }
-            else if (blizzard === '>') {
-                newX++;
-                if (newX > bounds.maxX) {
-                    newX = bounds.minX;
-                }
-            }
-            newLocations[`${newX},${newY}`].push(blizzard);
-        });
-    });
-    return newLocations;
+const forecastBlizzard = (x, y, minute) => {
+    const goingRight = blizzards[`${mod((x - minute), cycleWidth)},${y}`] === '>';
+    const goingLeft = blizzards[`${mod((x + minute), cycleWidth)},${y}`] === '<';
+    const goingUp = blizzards[`${x},${mod((y + minute), cycleHeight)}`] === '^';
+    const goingDown = blizzards[`${x},${mod((y - minute), cycleHeight)}`] === 'v';
+    return goingUp || goingDown || goingRight || goingLeft;
+};
+const isInBounds = (x, y) => {
+    return (x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY) || `${x},${y}` === END || `${x},${y}` === START;
 };
 const getNeighbors = (node) => {
     const [x, y] = node.position.split(',').map(Number);
-    const currBlizzard = JSON.parse(node.blizzards);
-    const nextBlizzard = tick(currBlizzard);
-    const nextBlizzardString = JSON.stringify(nextBlizzard);
-    const up = `${x},${y - 1}`;
-    const down = `${x},${y + 1}`;
-    const left = `${x - 1},${y}`;
-    const right = `${x + 1},${y}`;
-    const wait = `${x},${y}`;
-    const next = [];
-    if (nextBlizzard[up] != null && nextBlizzard[up].length === 0) {
-        next.push({ position: up, blizzardMap: nextBlizzardString });
-    }
-    if (nextBlizzard[down] != null && nextBlizzard[down].length === 0) {
-        next.push({ position: down, blizzardMap: nextBlizzardString });
-    }
-    if (nextBlizzard[left] != null && nextBlizzard[left].length === 0) {
-        next.push({ position: left, blizzardMap: nextBlizzardString });
-    }
-    if (nextBlizzard[right] != null && nextBlizzard[right].length === 0) {
-        next.push({ position: right, blizzardMap: nextBlizzardString });
-    }
-    if (nextBlizzard[wait] != null && nextBlizzard[wait].length === 0) {
-        next.push({ position: wait, blizzardMap: nextBlizzardString });
-    }
-    return next;
+    const moves = [
+        { x, y: y - 1 },
+        { x, y: y + 1 },
+        { x: x - 1, y },
+        { x: x + 1, y },
+        { x, y }, // wait
+    ].filter(move => {
+        return isInBounds(move.x, move.y) && !forecastBlizzard(move.x, move.y, node.distance + 1);
+    }).map(move => `${move.x},${move.y}`);
+    return moves;
 };
-// const simulate = (position: string, target: string, timeElapsed: number, blizzards: string): number => {
-//   if (position === target) {
-//     return timeElapsed;
-//   }
-//   if (timeElapsed > 100) {
-//     return timeElapsed;
-//   }
-//   const possibleDecisions = getNeighbors({ position, blizzards });
-//   const out = possibleDecisions.map(step => {
-//     return simulate(step.position, target, timeElapsed + 1, step.blizzardMap);
-//   })
-//   return Math.min(...out, Infinity);
-// }
-// const result = simulate(START, END, 0, JSON.stringify(locations));
-// console.log(result);
-function bfs(target, initialBlizzards) {
-    const cycleWidth = (bounds.maxX - bounds.minX) + 1;
-    const cycleHeight = (bounds.maxY - bounds.minY) + 1;
-    const cycle = cycleWidth * cycleHeight;
-    const queue = [{ position: START, distance: 0, blizzards: initialBlizzards }];
+function bfs(start, target, startingDistance) {
+    const queue = [{ position: start, distance: startingDistance }];
     const seen = new Set();
-    seen.add(`${START}&${0}`);
+    seen.add(`${start}&${startingDistance}`);
     for (const node of queue) {
         if (node.position === target)
             return node.distance;
         for (const neighbor of getNeighbors(node)) {
-            if (seen.has(`${neighbor.position}&${(node.distance + 1) % 600}`))
+            if (seen.has(`${neighbor}&${(node.distance + 1) % cycle}`))
                 continue;
-            seen.add(`${neighbor.position}&${(node.distance + 1) % 600}`);
-            queue.push({ position: neighbor.position, distance: node.distance + 1, blizzards: neighbor.blizzardMap });
+            seen.add(`${neighbor}&${(node.distance + 1) % cycle}`);
+            queue.push({ position: neighbor, distance: node.distance + 1 });
         }
     }
     return -1;
 }
-const path = bfs(END, JSON.stringify(locations));
-console.log(path);
-// let loc = locations;
-// for (let i = 0; i < 5; i++) {
-//   loc = tick(loc);
-//   print(loc);
-// }
+let startingDistance = 0;
+startingDistance = bfs(START, END, startingDistance);
+startingDistance = bfs(END, START, startingDistance);
+startingDistance = bfs(START, END, startingDistance);
+console.log(startingDistance);
 //# sourceMappingURL=index.js.map
